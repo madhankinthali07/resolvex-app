@@ -5,3 +5,6 @@ scikit-learn==1.4.2
 xgboost==2.1.0
 lightgbm==4.4.0
 gunicorn==22.0.0
+numpy==1.26.4
+scipy==1.13.1
+imbalanced-learn==0.12.3
