@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResolveX — User Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-toggle-handle" onclick="toggleSidebar(true)" title="Minimize Sidebar"></div>
+    <div class="sidebar-brand">
+      <img src="logo.png" alt="ResolveX Logo" style="height: 38px; width: auto; object-fit: contain;">
+      <h2>ResolveX</h2>
+    </div>
+    <div class="sidebar-role">User Portal</div>
+    <ul>
+      <li class="active" onclick="showSection('create', this)">
+        <i class="fa-solid fa-plus-circle"></i> Create Ticket
+      </li>
+      <li onclick="showSection('mytickets', this)">
+        <i class="fa-solid fa-ticket"></i> My Tickets
+      </li>
+      <li onclick="showSection('helpcenter', this)">
+        <i class="fa-solid fa-circle-question"></i> Help Centre
+      </li>
+      <li onclick="showSection('notifications', this)" id="sidebarNotifBtn">
+        <i class="fa-solid fa-bell"></i> Notifications
+        <span id="sidebarBadge" style="display:none;margin-left:auto;background:var(--red);color:white;border-radius:10px;padding:2px 7px;font-size:11px;font-weight:700;"></span>
+      </li>
+    </ul>
+    <div class="sidebar-bottom">
+      <ul>
+        <li class="logout-btn" onclick="logout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Sidebar Expand Button -->
+  <div class="sidebar-expand-btn" id="sidebarExpandBtn" onclick="toggleSidebar(false)" title="Expand Sidebar">
+    <i class="fa-solid fa-chevron-right"></i>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <div class="topbar">
+      <h1 id="pageTitle">Create Ticket</h1>
+      <div class="topbar-right">
+
+        <!-- BELL ICON -->
+        <div class="topbar-notif" id="bellBtn" onclick="toggleNotifPanel(event)" title="Notifications">
+          <i class="fa-solid fa-bell" style="font-size:15px;color:var(--text-secondary);"></i>
+          <div class="notif-dot" id="notifDot" style="display:none;"></div>
+        </div>
+
+        <!-- NOTIF PANEL (inline dropdown) -->
+        <div class="topbar-dropdown notif-panel" id="notifPanel" style="display:none;">
+          <div class="notif-panel-header" style="display:flex;gap:12px;align-items:center;">
+            <h4>Notifications</h4>
+            <div style="margin-left:auto;display:flex;gap:10px;font-size:12px;">
+              <span onclick="markAllRead()" style="color:var(--blue);cursor:pointer;font-weight:600;">Mark read</span>
+              <span onclick="clearNotifications()" style="color:var(--red);cursor:pointer;font-weight:600;">Clear all</span>
+            </div>
+          </div>
+          <div id="notifDropdownList">
+            <div class="notif-empty"><i class="fa-solid fa-bell-slash"></i>No notifications yet.</div>
+          </div>
+        </div>
+
+        <!-- AVATAR / PROFILE -->
+        <div class="topbar-avatar" id="userAvatar" onclick="toggleProfilePanel(event)" title="Profile">U</div>
+
+        <!-- PROFILE DROPDOWN -->
+        <div class="topbar-dropdown" id="profilePanel" style="display:none;">
+          <div class="dropdown-header">
+            <div class="dropdown-header-icon" id="profileIconLarge">U</div>
+            <div class="dropdown-header-text">
+              <strong id="profileName">User</strong>
+              <span id="profileEmail">user@gmail.com</span>
+            </div>
+          </div>
+          <div class="dropdown-item" onclick="showSection('create', document.querySelector(\'.sidebar li\'));closeDropdowns();">
+            <i class="fa-solid fa-plus-circle"></i> Create Ticket
+          </div>
+          <div class="dropdown-item" onclick="showSection('mytickets', null);closeDropdowns();">
+            <i class="fa-solid fa-ticket"></i> My Tickets
+          </div>
+          <div class="dropdown-item" onclick="showSection('notifications', null);closeDropdowns();">
+            <i class="fa-solid fa-bell"></i> Notifications
+          </div>
+          <div class="dropdown-item" onclick="openEditProfileModal();closeDropdowns();">
+            <i class="fa-solid fa-user-gear"></i> Edit Profile
+          </div>
+          <div class="dropdown-item" onclick="openChangePasswordModal();closeDropdowns();">
+            <i class="fa-solid fa-key"></i> Change Password
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item danger" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- STATS CARDS -->
+    <div class="cards" style="grid-template-columns:repeat(3,1fr);">
+      <div class="card card-blue">
+        <div class="card-icon"><i class="fa-solid fa-list-check"></i></div>
+        <h2 id="totalCount">0</h2>
+        <p>Total Tickets</p>
+      </div>
+      <div class="card card-yellow">
+        <div class="card-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+        <h2 id="pendingCount">0</h2>
+        <p>Pending</p>
+      </div>
+      <div class="card card-green">
+        <div class="card-icon"><i class="fa-solid fa-check-double"></i></div>
+        <h2 id="resolvedCount">0</h2>
+        <p>Resolved</p>
+      </div>
+    </div>
+
+    <!-- ===========================
+         SECTION: CREATE TICKET
+    ============================ -->
+    <div id="section-create">
+      <div class="form-box">
+        <h2><i class="fa-solid fa-plus" style="color:var(--blue);margin-right:10px;"></i>New Support Ticket</h2>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Your Name</label>
+            <input type="text" id="name" placeholder="Enter your full name" readonly style="background: var(--surface2); cursor: not-allowed;">
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="email" placeholder="Enter your email" readonly style="background: var(--surface2); cursor: not-allowed;">
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="category" onchange="handleCategoryChange()">
+              <option value="">— Select Category —</option>
+              <option>Technical Issue</option>
+              <option>Billing Inquiry</option>
+              <option>Product Inquiry</option>
+              <option>Refund Request</option>
+              <option>Cancellation Request</option>
+              <option>Product Setup</option>
+              <option>Hardware Issue</option>
+              <option>Software Bug</option>
+              <option>Network Problem</option>
+              <option>Account Access</option>
+              <option value="other">other (Specify Below)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ticket Subject</label>
+            <select id="subject">
+              <option value="">— Select Ticket Subject —</option>
+              <option>Account access</option>
+              <option>Battery life</option>
+              <option>Cancellation request</option>
+              <option>Data loss</option>
+              <option>Delivery problem</option>
+              <option>Display issue</option>
+              <option>Hardware issue</option>
+              <option>Installation support</option>
+              <option>Network problem</option>
+              <option>Payment issue</option>
+              <option>Peripheral compatibility</option>
+              <option>Product compatibility</option>
+              <option>Product recommendation</option>
+              <option>Product setup</option>
+              <option>Refund request</option>
+              <option>Software bug</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="priority">
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Contact Channel</label>
+            <select id="contactChannel">
+              <option value="">— Select Contact Channel —</option>
+              <option>Email</option>
+              <option>Phone</option>
+              <option>Social Media</option>
+              <option>Chat</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Product Purchased</label>
+            <select id="productPurchased">
+              <option value="">— Select Product —</option>
+              <option>iPhone</option>
+              <option>Samsung Galaxy</option>
+              <option>MacBook Pro</option>
+              <option>Dell XPS</option>
+              <option>Lenovo ThinkPad</option>
+              <option>HP Pavilion</option>
+              <option>Asus ROG</option>
+              <option>Microsoft Surface</option>
+              <option>LG Smart TV</option>
+              <option>Sony 4K HDR TV</option>
+              <option>LG OLED</option>
+              <option>Nintendo Switch</option>
+              <option>Sony PlayStation</option>
+              <option>Xbox</option>
+              <option>GoPro Hero</option>
+              <option>GoPro Action Camera</option>
+              <option>Canon EOS</option>
+              <option>Canon DSLR Camera</option>
+              <option>Nikon D</option>
+              <option>Apple AirPods</option>
+              <option>Bose QuietComfort</option>
+              <option>Bose SoundLink Speaker</option>
+              <option>Samsung Soundbar</option>
+              <option>Amazon Echo</option>
+              <option>Google Pixel</option>
+              <option>Google Nest</option>
+              <option>Nest Thermostat</option>
+              <option>Philips Hue Lights</option>
+              <option>Fitbit Versa Smartwatch</option>
+              <option>Fitbit Charge</option>
+              <option>Garmin Forerunner</option>
+              <option>Dyson Vacuum Cleaner</option>
+              <option>Roomba Robot Vacuum</option>
+              <option>LG Washing Machine</option>
+              <option>Amazon Kindle</option>
+              <option>Microsoft Xbox Controller</option>
+              <option>Nintendo Switch Pro Controller</option>
+              <option>Adobe Photoshop</option>
+              <option>Autodesk AutoCAD</option>
+              <option>microsoft office</option>
+            </select>
+          </div>
+
+          <!-- "Other" custom category field -->
+          <div class="form-group other-field full-width" id="otherCategoryGroup">
+            <label><i class="fa-solid fa-pen" style="color:var(--blue);margin-right:6px;"></i>Please describe your issue type</label>
+            <input type="text" id="otherCategory" placeholder="e.g. Delivery problem, wrong item received, account merge request...">
+          </div>
+
+          <div class="form-group full-width">
+            <label>Describe Your Issue</label>
+            <textarea id="description" placeholder="Provide as much detail as possible about your issue..." oninput="updateAISuggestion()"></textarea>
+          </div>
+          <div class="form-group full-width">
+            <label>Attachment (Optional)</label>
+            <div class="file-upload" onclick="document.getElementById('fileUpload').click()">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span id="fileLabel">Click to upload a screenshot or document</span>
+              <input type="file" id="fileUpload" onchange="handleFileSelect(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- AI LIVE SUGGESTION -->
+        <div class="ai-live-box" id="aiLiveBox">
+          <div class="ai-label"><i class="fa-solid fa-robot"></i> &nbsp;AI Analysis</div>
+          <div class="ai-text" id="aiLiveText">Analyzing your issue...</div>
+        </div>
+
+        <div style="margin-top:22px;display:flex;gap:14px;">
+          <button class="btn btn-primary" onclick="submitTicket()" style="padding:14px 28px;font-size:15px;">
+            <i class="fa-solid fa-paper-plane"></i> Submit Ticket
+          </button>
+          <button class="btn" onclick="clearForm()"
+            style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);padding:14px 22px;font-size:15px;">
+            <i class="fa-solid fa-rotate-left"></i> Clear
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===========================
+         SECTION: MY TICKETS
+    ============================ -->
+    <div id="section-mytickets" style="display:none;">
+      <div class="ticket-table">
+        <div class="table-header">
+          <h2>My Tickets</h2>
+          <div class="table-controls">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" placeholder="Search tickets..." id="ticketSearch" oninput="filterMyTickets()">
+            </div>
+            <select class="filter-btn" id="statusFilter" onchange="filterMyTickets()">
+              <option value="">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+            </select>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket ID</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Priority</th>
+              <th>AI Suggestion</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="myTicketsBody"></tbody>
+        </table>
+        <div class="empty-state" id="myTicketsEmpty" style="display:none;">
+          <i class="fa-solid fa-ticket-simple"></i>
+          <p>No tickets yet. Create your first support ticket!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===========================
+         SECTION: HELP CENTRE
+    ============================ -->
+    <div id="section-helpcenter" style="display:none;">
+      <div class="ai-box" style="margin-bottom:24px;">
+        <div class="ai-box-header">
+          <span class="ai-badge">Self-Service</span>
+          <h2>Help Centre</h2>
+        </div>
+        <p>Find quick answers to common problems before raising a ticket. Browse by category below — most issues can be solved in under 2 minutes.</p>
+      </div>
+
+      <div class="kb-grid">
+        <div class="kb-card" onclick="openHelpArticle('technical')">
+          <i class="fa-solid fa-gear"></i>
+          <h4>Technical Issue</h4>
+          <p>Performance problems, compatibility issues, app crashes, and errors.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('billing')">
+          <i class="fa-solid fa-credit-card"></i>
+          <h4>Billing Inquiry</h4>
+          <p>Invoices, subscription cycles, payment methods, and charges.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('product')">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <h4>Product Inquiry</h4>
+          <p>Feature questions, specifications, documentation, and licensing.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('refund')">
+          <i class="fa-solid fa-rotate-left"></i>
+          <h4>Refund Request</h4>
+          <p>Refund eligibility, order issues, billing disputes, and processing times.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('cancellation')">
+          <i class="fa-solid fa-rectangle-xmark"></i>
+          <h4>Cancellation Request</h4>
+          <p>Cancelling plans, subscription halts, and account offboarding.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('setup')">
+          <i class="fa-solid fa-screwdriver-wrench"></i>
+          <h4>Product Setup</h4>
+          <p>Quick start guides, configuration help, and connection parameters.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('hardware')">
+          <i class="fa-solid fa-laptop"></i>
+          <h4>Hardware Issue</h4>
+          <p>Device diagnostics, cable connections, system driver updates.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('bug')">
+          <i class="fa-solid fa-bug"></i>
+          <h4>Software Bug</h4>
+          <p>App errors, script failures, unexpected behaviors, reproduction steps.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('network')">
+          <i class="fa-solid fa-wifi"></i>
+          <h4>Network Problem</h4>
+          <p>Bandwidth issues, routers, modem resets, VPN/proxy conflicts.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('account')">
+          <i class="fa-solid fa-key"></i>
+          <h4>Account Access</h4>
+          <p>Login problems, password resets, locked accounts, and OTP/2FA.</p>
+        </div>
+        <div class="kb-card" onclick="openHelpArticle('other')">
+          <i class="fa-solid fa-circle-question"></i>
+          <h4>other</h4>
+          <p>General questions, user manuals, and other custom support requests.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:22px;text-align:center;">
+        <p style="color:var(--text-muted);font-size:14px;margin-bottom:14px;">Can't find what you're looking for?</p>
+        <button class="btn btn-primary" onclick="showSection('create', document.querySelectorAll('.sidebar li')[0])">
+          <i class="fa-solid fa-plus"></i> Raise a Support Ticket
+        </button>
+      </div>
+    </div>
+
+    <!-- ===========================
+         SECTION: NOTIFICATIONS
+    ============================ -->
+    <div id="section-notifications" style="display:none;">
+      <div class="section-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <h2 style="margin:0;"><i class="fa-solid fa-bell" style="color:var(--blue);margin-right:10px;"></i>Notifications</h2>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-sm" onclick="markAllRead()"
+              style="background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.2);color:var(--blue);">
+              <i class="fa-solid fa-check-double"></i> Mark all read
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="clearNotifications()"
+              style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:var(--red);">
+              <i class="fa-solid fa-trash-can"></i> Clear all
+            </button>
+          </div>
+        </div>
+        <div id="notifList">
+          <div class="empty-state">
+            <i class="fa-solid fa-bell-slash"></i>
+            <p>No notifications yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /dashboard -->
+
+<!-- TICKET DETAIL MODAL -->
+<div class="modal-overlay" id="ticketModal">
+  <div class="modal-box" style="width:580px;">
+    <h3 id="modalTitle">Ticket Details</h3>
+    <p class="modal-sub" id="modalSub"></p>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- HELP ARTICLE MODAL -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal-box" style="width:560px;">
+    <h3 id="helpModalTitle"></h3>
+    <p class="modal-sub" id="helpModalSub"></p>
+    <div id="helpModalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="raiseHelpTicket()">
+        <i class="fa-solid fa-plus"></i> Raise a Ticket
+      </button>
+      <button class="btn" onclick="closeHelpModal()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROFILE MODAL -->
+<div class="modal-overlay" id="editProfileModal">
+  <div class="modal-box" style="width: 450px;">
+    <h3>Edit Profile</h3>
+    <p class="modal-sub">Update your account name, email and profile image</p>
+    
+    <!-- Profile Image Upload / Preview -->
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 18px; margin-bottom: 18px;">
+      <div id="profileImagePreviewContainer" style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: var(--surface2); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; color: var(--blue);">
+        <span id="profileImagePreviewLetter">U</span>
+        <img id="profileImagePreviewImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <label class="btn btn-sm" style="padding: 8px 16px; font-size: 13px; cursor: pointer; background: var(--surface2); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 8px; font-weight: 500;">
+          Choose Photo
+          <input type="file" id="profileImageInput" accept="image/*" style="display: none;" onchange="handleProfileImageSelect(event)">
+        </label>
+        <button type="button" class="btn btn-sm" onclick="removeProfilePhoto()" style="padding: 8px 16px; font-size: 13px; cursor: pointer; background: transparent; border: 1px solid var(--red); color: var(--red); border-radius: 8px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+          <i class="fa-solid fa-trash-can"></i> Remove Photo
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:14px;">
+      <label>Full Name</label>
+      <input type="text" id="editProfileName" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;" placeholder="Enter name...">
+    </div>
+    
+    <div class="form-group" style="margin-top:14px;">
+      <label>Email Address</label>
+      <input type="email" id="editProfileEmail" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;" placeholder="Enter email...">
+    </div>
+
+    <div class="form-group" style="margin-top:14px;">
+      <label>Phone Number</label>
+      <input type="tel" id="editProfilePhone" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;" placeholder="Enter phone number...">
+    </div>
+
+    <div class="form-group" style="margin-top:14px;">
+<label>Products Purchased <span style="font-size: 11px; color: var(--text-secondary); font-weight: normal;">(Hold Ctrl/Cmd to select multiple)</span></label>
+<select id="editProfileProduct" multiple style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;background-image:none;height:120px;">
+        <option value="">— Select Product —</option>
+        <option>iPhone</option>
+        <option>Samsung Galaxy</option>
+        <option>MacBook Pro</option>
+        <option>Dell XPS</option>
+        <option>Lenovo ThinkPad</option>
+        <option>HP Pavilion</option>
+        <option>Asus ROG</option>
+        <option>Microsoft Surface</option>
+        <option>LG Smart TV</option>
+        <option>Sony 4K HDR TV</option>
+        <option>LG OLED</option>
+        <option>Nintendo Switch</option>
+        <option>Sony PlayStation</option>
+        <option>Xbox</option>
+        <option>GoPro Hero</option>
+        <option>GoPro Action Camera</option>
+        <option>Canon EOS</option>
+        <option>Canon DSLR Camera</option>
+        <option>Nikon D</option>
+        <option>Apple AirPods</option>
+        <option>Bose QuietComfort</option>
+        <option>Bose SoundLink Speaker</option>
+        <option>Samsung Soundbar</option>
+        <option>Amazon Echo</option>
+        <option>Google Pixel</option>
+        <option>Google Nest</option>
+        <option>Nest Thermostat</option>
+        <option>Philips Hue Lights</option>
+        <option>Fitbit Versa Smartwatch</option>
+        <option>Fitbit Charge</option>
+        <option>Garmin Forerunner</option>
+        <option>Dyson Vacuum Cleaner</option>
+        <option>Roomba Robot Vacuum</option>
+        <option>LG Washing Machine</option>
+        <option>Amazon Kindle</option>
+        <option>Microsoft Xbox Controller</option>
+        <option>Nintendo Switch Pro Controller</option>
+        <option>Adobe Photoshop</option>
+        <option>Autodesk AutoCAD</option>
+        <option>microsoft office</option>
+      </select>
+    </div>
+    
+    <p id="editProfileErrorText" style="margin-top: 14px; color: var(--error); font-size: 13px; min-height: 20px;"></p>
+    
+    <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 20px;">
+      <button class="btn btn-danger" onclick="deleteMyAccount()" style="background:#ef4444; border:none; color:white; width:100%; padding:14px; border-radius:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <i class="fa-solid fa-trash-can"></i> Delete Account
+      </button>
+      <p style="font-size:11px; color:var(--text-secondary); text-align:center; margin-top:6px; margin-bottom: 0;">Warning: This action is permanent and will delete your account immediately.</p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeEditProfileModal()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEditProfile()">
+        <i class="fa-solid fa-check"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-overlay" id="changePasswordModal">
+  <div class="modal-box">
+    <h3>Change Password</h3>
+    <p class="modal-sub">Update your account password</p>
+    
+    <div class="form-group" style="margin-top:14px;">
+      <label>Current Password</label>
+      <input type="password" id="changeCurrentPassword" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;" placeholder="Enter current password...">
+    </div>
+    <div class="form-group" style="margin-top:14px;">
+      <label>New Password</label>
+      <input type="password" id="changeNewPassword" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;" placeholder="Enter new password (min 6 chars)...">
+    </div>
+    <div class="form-group" style="margin-top:14px;">
+      <label>Confirm New Password</label>
+      <input type="password" id="changeConfirmPassword" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;" placeholder="Confirm new password...">
+    </div>
+    
+    <p id="changePasswordErrorText" style="margin-top: 14px; color: var(--error); font-size: 13px; min-height: 20px;"></p>
+    
+    <div class="modal-actions">
+      <button class="btn" onclick="closeChangePasswordModal()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">Cancel</button>
+      <button class="btn btn-primary" onclick="submitChangePassword()">
+        <i class="fa-solid fa-check"></i> Change Password
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- AI PREDICTION MODAL -->
+<div class="modal-overlay" id="aiPredictionModal">
+  <div class="modal-box" style="width:500px; text-align: center; padding: 30px;">
+    <div id="aiPredictionLoading">
+      <div style="font-size: 40px; color: var(--blue); margin-bottom: 20px;">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+      </div>
+      <h3>AI Analysis in Progress...</h3>
+      <p class="modal-sub" style="margin-top: 8px;">Our AI is analyzing your issue to see if it can be resolved immediately.</p>
+    </div>
+    
+    <div id="aiPredictionYes" style="display: none;">
+      <div style="font-size: 50px; color: var(--green); margin-bottom: 20px;">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h3 style="color: var(--green);">Problem Solved Directly!</h3>
+      <div id="aiResolutionDetails" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 15px 0; text-align: left; max-height: 250px; overflow-y: auto; color: var(--text-primary);">
+        <!-- Filled dynamically by JS -->
+      </div>
+      <div class="modal-actions" style="justify-content: center; margin-top: 25px;">
+        <button class="btn btn-primary" onclick="closeAiPredictionModal(true)">Great, Thanks!</button>
+      </div>
+    </div>
+    
+    <div id="aiPredictionNo" style="display: none;">
+      <div style="font-size: 50px; color: var(--red); margin-bottom: 20px;">
+        <i class="fa-solid fa-circle-xmark"></i>
+      </div>
+      <h3 style="color: var(--red);">Assistance Required</h3>
+      <p class="modal-sub" style="margin-top: 10px; line-height: 1.6; font-size: 14px;">This issue requires further assistance as our AI cannot resolve it automatically. Please click below to raise a ticket to our support team.</p>
+      <div id="aiPredictionNoDetails" style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px; padding: 14px; margin: 15px auto; text-align: left; max-height: 150px; overflow-y: auto; color: #cbd5e1; font-size: 13px; line-height: 1.5; max-width: 440px;">
+        <!-- Filled dynamically by JS -->
+      </div>
+      <div class="modal-actions" style="justify-content: center; margin-top: 25px; gap: 12px;">
+        <button class="btn" onclick="closeAiPredictionModal(false)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">Cancel</button>
+        <button class="btn btn-primary" onclick="proceedToRaiseTicket()">Raise a Ticket</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="user.js"></script>
+</body>
+</html>

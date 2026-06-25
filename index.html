@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResolveX — AI Smart Support</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <div class="portal-screen" id="loginSelection">
+    <!-- Subtle abstract AI-inspired background with glowing accent blobs and grid -->
+    <div class="animated-bg"></div>
+    <div class="grid-overlay"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="portal-wrapper">
+
+      <!-- LEFT SECTION: Brand Mission & Live stats -->
+      <div class="portal-left">
+        <div class="brand">
+          <img src="logo.png" alt="ResolveX" class="brand-logo">
+        </div>
+        <h1>Smarter Tickets.<br><span class="gradient-text">Faster Resolutions.</span></h1>
+        <p>AI-powered support management that categorizes, prioritizes, and resolves tickets before your team even reads them.</p>
+        
+        <div class="stats-row">
+          <div class="mini-stat" style="flex: 1.5;">
+            <h3>AI Integrated</h3>
+            <span>Website Portal</span>
+          </div>
+          <div class="mini-stat" style="flex: 1;">
+            <h3 id="ticketsManagedCount">0</h3>
+            <span>Tickets Managed</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SECTION: Login Form -->
+      <div class="portal-right" style="grid-template-columns: 1fr; max-width: 480px; margin-left: auto; width: 100%;">
+        <div class="portal-card unified-login-card" style="cursor: default; min-height: auto; padding: 40px 32px;">
+          <div class="card-glow"></div>
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+            <div class="portal-icon blue-glow" style="width: 54px; height: 54px; font-size: 22px; margin-bottom: 0; display: flex; align-items: center; justify-content: center; border-radius: 16px;">
+              <i class="fa-solid fa-right-to-bracket"></i>
+            </div>
+            <div>
+              <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 2px;">Welcome Back</h2>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 0; line-height: 1.4;">Sign in to access your portal</p>
+            </div>
+          </div>
+
+          <div class="input-group" style="margin-bottom: 16px;">
+            <i class="fa-solid fa-envelope"></i>
+            <input type="email" id="email" placeholder="Enter Email">
+          </div>
+          <div class="input-group" style="margin-bottom: 20px;">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="password" placeholder="Enter Password">
+          </div>
+
+          <button onclick="login()" id="loginBtn" style="background: var(--primary); padding: 16px; border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; transition: 0.3s;">
+            <span>Login</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          
+          <p id="errorText" style="margin-top: 14px; color: var(--error); text-align: center; font-size: 14px; min-height: 20px;"></p>
+
+          <div style="margin-top: 18px; text-align: center;">
+            <span style="color: var(--text-secondary); font-size: 14px;">New to ResolveX? </span>
+            <span onclick="selectRoleAndRegister('user')" style="color: var(--primary); font-size: 14px; cursor: pointer; font-weight: 600;">Create Account</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROLE SELECTOR MODAL (Retained from original) -->
+  <div class="login-modal" id="roleSelectorModal">
+    <div class="login-box" style="width: 450px;">
+      <span class="close-btn" onclick="closeRoleSelector()">&times;</span>
+      <div class="login-icon" style="background: var(--primary); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <h2>Select Account Type</h2>
+      <p class="login-hint">Choose the portal role you want to register for</p>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+        <div class="portal-card user-card" onclick="selectRoleAndRegister('user')" style="min-height: auto; padding: 16px 20px; flex-direction: row; align-items: center; gap: 16px; border-radius: 12px;">
+          <div class="portal-icon blue-glow" style="width: 44px; height: 44px; margin-bottom: 0; font-size: 16px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div style="text-align: left;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 2px;">User Portal</h3>
+            <p style="margin-bottom: 0; font-size: 12px; line-height: 1.4; color: var(--text-muted);">Raise support requests & track AI updates</p>
+          </div>
+        </div>
+
+        <div class="portal-card solver-card" onclick="selectRoleAndRegister('solver')" style="min-height: auto; padding: 16px 20px; flex-direction: row; align-items: center; gap: 16px; border-radius: 12px;">
+          <div class="portal-icon green-glow" style="width: 44px; height: 44px; margin-bottom: 0; font-size: 16px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-headset"></i>
+          </div>
+          <div style="text-align: left;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 2px;">Ticket Solver</h3>
+            <p style="margin-bottom: 0; font-size: 12px; line-height: 1.4; color: var(--text-muted);">Handle and resolve support tickets</p>
+          </div>
+        </div>
+
+        <div class="portal-card admin-card" onclick="selectRoleAndRegister('admin')" style="min-height: auto; padding: 16px 20px; flex-direction: row; align-items: center; gap: 16px; border-radius: 12px;">
+          <div class="portal-icon purple-glow" style="width: 44px; height: 44px; margin-bottom: 0; font-size: 16px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div style="text-align: left;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 2px;">Admin Portal</h3>
+            <p style="margin-bottom: 0; font-size: 12px; line-height: 1.4; color: var(--text-muted);">Monitor operations and manage teams</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTER MODAL (Retained from original) -->
+  <div class="login-modal" id="registerModal">
+    <div class="login-box">
+      <span class="close-btn" onclick="closeRegister()">&times;</span>
+      <div class="login-icon" style="background: var(--success);">
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <h2>Create Account</h2>
+      <p class="login-hint">Sign up to raise and track support tickets</p>
+
+      <div class="input-group">
+        <i class="fa-solid fa-user"></i>
+        <input type="text" id="reg-name" placeholder="Full Name">
+      </div>
+      <div class="input-group">
+        <i class="fa-solid fa-envelope"></i>
+        <input type="email" id="reg-email" placeholder="Email Address">
+      </div>
+      <div class="input-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" id="reg-password" placeholder="Create Password">
+      </div>
+      <div class="input-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" id="reg-confirm" placeholder="Confirm Password">
+      </div>
+
+      <!-- Admin Creation Authorization (Required by app.js/app.py) -->
+      <div id="adminAuthFields" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <p style="font-size:12px;color:var(--error);margin-bottom:8px;font-weight:600;text-align:left;"><i class="fa-solid fa-shield"></i> Default Admin Auth Required</p>
+        <div class="input-group" style="margin-bottom:10px;">
+          <i class="fa-solid fa-user-shield"></i>
+          <input type="text" id="default-admin-username" placeholder="Default Admin Username">
+        </div>
+        <div class="input-group">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="default-admin-password" placeholder="Default Admin Password">
+        </div>
+      </div>
+
+      <button onclick="register()" id="registerBtn" style="margin-top:6px;background: var(--success);">
+        <span>Create Account</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+      <p id="regErrorText" style="margin-top:14px;color:var(--error);text-align:center;font-size:14px;min-height:20px;"></p>
+
+      <div style="margin-top:18px;text-align:center;">
+        <span style="color:var(--text-secondary);font-size:14px;">Already have an account? </span>
+        <span onclick="closeRegister();" style="color:var(--primary);font-size:14px;cursor:pointer;font-weight:600;">Log In</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

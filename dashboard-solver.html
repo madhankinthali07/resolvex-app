@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResolveX — Solver Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-toggle-handle" onclick="toggleSidebar(true)" title="Minimize Sidebar"></div>
+    <div class="sidebar-brand">
+      <img src="logo.png" alt="ResolveX Logo" style="height: 38px; width: auto; object-fit: contain;">
+      <h2>ResolveX</h2>
+    </div>
+    <div class="sidebar-role">Solver Portal</div>
+    <ul>
+      <li class="active" onclick="showSection('assigned',this)">
+        <i class="fa-solid fa-inbox"></i> Assigned Tickets
+      </li>
+      <li onclick="showSection('resolved',this)">
+        <i class="fa-solid fa-circle-check"></i> Resolved
+      </li>
+
+    </ul>
+    <div class="sidebar-bottom">
+      <ul>
+        <li class="logout-btn" onclick="logout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Sidebar Expand Button -->
+  <div class="sidebar-expand-btn" id="sidebarExpandBtn" onclick="toggleSidebar(false)" title="Expand Sidebar">
+    <i class="fa-solid fa-chevron-right"></i>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <div class="topbar">
+      <h1 id="pageTitle">Assigned Tickets</h1>
+      <div class="topbar-right" style="position:relative;">
+        <!-- PROFILE AVATAR -->
+        <div class="topbar-avatar" id="solverAvatar" onclick="toggleSolverProfile(event)" style="background:var(--green);cursor:pointer;" title="Profile">S</div>
+        
+        <!-- PROFILE DROPDOWN -->
+        <div class="topbar-dropdown" id="solverProfilePanel" style="display:none;position:absolute;right:0;top:55px;z-index:9999;width:240px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 12px 32px rgba(15,23,42,0.08);">
+          <div class="dropdown-header" style="display:flex;align-items:center;gap:12px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:12px;">
+            <div class="dropdown-header-icon" id="solverProfileIconLarge" style="width:40px;height:40px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;">S</div>
+            <div class="dropdown-header-text" style="display:flex;flex-direction:column;gap:2px;overflow:hidden;">
+              <strong id="solverProfileName" style="font-size:14px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Solver Name</strong>
+              <span id="solverProfileEmail" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">solver@gmail.com</span>
+            </div>
+          </div>
+          <div class="dropdown-item" onclick="showSection('assigned', document.querySelector('.sidebar li'));closeSolverDropdown();" style="display:flex;align-items:center;gap:10px;padding:10px 12px;color:var(--text-secondary);font-size:13px;border-radius:8px;cursor:pointer;transition:0.2s;">
+            <i class="fa-solid fa-inbox" style="color:#22c55e;"></i> Assigned Tickets
+          </div>
+          <div class="dropdown-item" onclick="showSection('resolved', document.querySelectorAll('.sidebar li')[1]);closeSolverDropdown();" style="display:flex;align-items:center;gap:10px;padding:10px 12px;color:var(--text-secondary);font-size:13px;border-radius:8px;cursor:pointer;transition:0.2s;">
+            <i class="fa-solid fa-circle-check" style="color:var(--blue);"></i> Resolved Tickets
+          </div>
+          <div class="dropdown-item" onclick="openChangePasswordModal();closeSolverDropdown();" style="display:flex;align-items:center;gap:10px;padding:10px 12px;color:var(--text-secondary);font-size:13px;border-radius:8px;cursor:pointer;transition:0.2s;">
+            <i class="fa-solid fa-key" style="color:var(--green);"></i> Change Password
+          </div>
+          <div class="dropdown-divider" style="height:1px;background:var(--border);margin:8px 0;"></div>
+          <div class="dropdown-item danger" onclick="logout()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;color:var(--red);font-size:13px;border-radius:8px;cursor:pointer;transition:0.2s;">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="cards" style="grid-template-columns:repeat(3,1fr);">
+      <div class="card card-blue">
+        <div class="card-icon"><i class="fa-solid fa-list-check"></i></div>
+        <h2 id="assignedCount">0</h2>
+        <p>Total Assigned</p>
+      </div>
+      <div class="card card-green">
+        <div class="card-icon"><i class="fa-solid fa-check-double"></i></div>
+        <h2 id="resolvedCount">0</h2>
+        <p>Resolved Today</p>
+      </div>
+      <div class="card card-yellow">
+        <div class="card-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+        <h2 id="pendingCount">0</h2>
+        <p>Pending Action</p>
+      </div>
+    </div>
+
+    <!-- ============================
+         SECTION: ASSIGNED TICKETS
+    ============================= -->
+    <div id="section-assigned">
+      <div class="ticket-table">
+        <div class="table-header">
+          <h2>Assigned Tickets</h2>
+          <div class="table-controls">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" placeholder="Search tickets..." id="solverSearch" oninput="filterTickets()">
+            </div>
+            <select class="filter-btn" id="solverFilter" onchange="filterTickets()">
+              <option value="">All Status</option>
+              <option>Pending</option>
+              <option>In Progress</option>
+            </select>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>User</th><th>Category</th>
+              <th>Priority</th><th>AI Insight</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="solverTicketBody"></tbody>
+        </table>
+        <div class="empty-state" id="assignedEmpty" style="display:none;">
+          <i class="fa-solid fa-inbox"></i>
+          <p>No tickets assigned yet. Check back soon!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================
+         SECTION: RESOLVED
+    ============================= -->
+    <div id="section-resolved" style="display:none;">
+      <div class="ticket-table">
+        <div class="table-header"><h2>Resolved Tickets</h2></div>
+        <table>
+          <thead>
+            <tr><th>ID</th><th>User</th><th>Category</th><th>Priority</th><th>Resolved On</th></tr>
+          </thead>
+          <tbody id="resolvedBody"></tbody>
+        </table>
+        <div class="empty-state" id="resolvedEmpty" style="display:none;">
+          <i class="fa-solid fa-circle-check"></i>
+          <p>No resolved tickets yet.</p>
+        </div>
+      </div>
+    </div>
+
+
+
+  </div>
+</div>
+
+<!-- RESOLVE MODAL -->
+<div class="modal-overlay" id="resolveModal">
+  <div class="modal-box">
+    <h3>Update Ticket</h3>
+    <p class="modal-sub" id="resolveModalSub"></p>
+    
+    <div id="standardUpdateSection">
+      <div class="form-group" style="margin-top:8px;">
+        <label>Update Status</label>
+        <select id="resolveStatus">
+          <option>Open</option>
+          <option>Pending</option>
+          <option>Solved</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-top:14px;">
+        <label>Resolution Note</label>
+        <textarea id="resolveNote"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;height:100px;outline:none;"
+          placeholder="Describe the action taken..."></textarea>
+      </div>
+      
+      <!-- Special Actions Escalations -->
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 12px; color: #94a3b8; font-weight: 600;">Special Actions</div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn" onclick="showReleaseSection()" style="flex: 1; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #ef4444; font-size: 13px; padding: 10px; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; font-family:'DM Sans',sans-serif;">
+            <i class="fa-solid fa-right-from-bracket"></i> Release Ticket
+          </button>
+          <button type="button" class="btn" id="reqApprovalBtn" onclick="requestApproval()" style="flex: 1; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); color: #f59e0b; font-size: 13px; padding: 10px; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; font-family:'DM Sans',sans-serif;">
+            <i class="fa-solid fa-shield"></i> Request Approval
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 20px;">
+        <button class="btn" onclick="closeResolveModal()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">Cancel</button>
+        <button class="btn btn-success" onclick="saveResolve()">
+          <i class="fa-solid fa-check"></i> Save
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden Release Section -->
+    <div id="releaseReasonSection" style="display: none; margin-top: 8px;">
+      <div class="form-group">
+        <label style="color: var(--red); font-weight: 600;"><i class="fa-solid fa-triangle-exclamation"></i> Release Reason (Required)</label>
+        <textarea id="releaseReasonText"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;height:100px;outline:none;margin-top:8px;"
+          placeholder="Explain why you are unable to solve this ticket (will be visible to admins)..."></textarea>
+      </div>
+      <div class="modal-actions" style="margin-top: 20px;">
+        <button class="btn" onclick="hideReleaseSection()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">Back</button>
+        <button class="btn" onclick="submitRelease()" style="background: var(--red); color: white; border: none; font-weight: 600; font-family:'DM Sans',sans-serif;">
+          <i class="fa-solid fa-right-from-bracket"></i> Confirm Release
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden Approval Request Section -->
+    <div id="approvalRequestSection" style="display: none; margin-top: 8px;">
+      <div class="form-group">
+        <label style="color: var(--yellow); font-weight: 600;"><i class="fa-solid fa-shield"></i> Escalation Message (Required)</label>
+        <textarea id="approvalRequestText"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;height:100px;outline:none;margin-top:8px;"
+          placeholder="Explain why you need approval from administrators to resolve this ticket..."></textarea>
+      </div>
+      <div class="modal-actions" style="margin-top: 20px;">
+        <button class="btn" onclick="hideApprovalSection()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">Back</button>
+        <button class="btn" onclick="submitApprovalRequest()" style="background: var(--yellow); color: white; border: none; font-weight: 600; font-family:'DM Sans',sans-serif;">
+          <i class="fa-solid fa-check"></i> Submit Request
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TICKET DETAIL MODAL -->
+<div class="modal-overlay" id="ticketModal">
+  <div class="modal-box" style="width:580px;">
+    <h3 id="modalTitle">Ticket Details</h3>
+    <p class="modal-sub" id="modalSub"></p>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-overlay" id="changePasswordModal">
+  <div class="modal-box">
+    <h3>Change Password</h3>
+    <p class="modal-sub">Update your account password</p>
+    
+    <div class="form-group" style="margin-top:14px;">
+      <label>Current Password</label>
+      <input type="password" id="changeCurrentPassword" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;" placeholder="Enter current password...">
+    </div>
+    <div class="form-group" style="margin-top:14px;">
+      <label>New Password</label>
+      <input type="password" id="changeNewPassword" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;" placeholder="Enter new password (min 6 chars)...">
+    </div>
+    <div class="form-group" style="margin-top:14px;">
+      <label>Confirm New Password</label>
+      <input type="password" id="changeConfirmPassword" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none;" placeholder="Confirm new password...">
+    </div>
+    
+    <p id="changePasswordErrorText" style="margin-top: 14px; color: var(--error); font-size: 13px; min-height: 20px;"></p>
+    
+    <div class="modal-actions">
+      <button class="btn" onclick="closeChangePasswordModal()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);">Cancel</button>
+      <button class="btn btn-primary" onclick="submitChangePassword()">
+        <i class="fa-solid fa-check"></i> Change Password
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ============================
+   GLOBAL FETCH INTERCEPTOR
+============================= */
+(function() {
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options) {
+    options = options || {};
+    options.headers = options.headers || {};
+    const email = localStorage.getItem("userEmail");
+    if (email) {
+      if (options.headers instanceof Headers) {
+        options.headers.set('X-User-Email', email);
+      } else {
+        options.headers['X-User-Email'] = email;
+      }
+    }
+    return originalFetch(url, options).then(response => {
+      if (response.status === 401 && !url.includes('/api/login') && !url.includes('/api/register')) {
+        localStorage.removeItem("role");
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("userName");
+        window.location.href = "index.html";
+      }
+      return response;
+    });
+  };
+})();
+
+/* ============================
+   AUTH GUARD
+============================= */
+(function() {
+  if (localStorage.getItem("role") !== "solver") {
+    window.location.href = "index.html";
+  }
+})();
+
+let currentTicketId = null;
+let solverTicketsList = [];
+
+/* ============================
+   SECTIONS
+============================= */
+function showSection(name, el) {
+  ["assigned","resolved"].forEach(s => {
+    document.getElementById("section-"+s).style.display = s === name ? "block" : "none";
+  });
+  document.querySelectorAll(".sidebar li").forEach(li => li.classList.remove("active"));
+  if (el) el.classList.add("active");
+
+  const titles = { assigned:"Assigned Tickets", resolved:"Resolved Tickets" };
+  document.getElementById("pageTitle").innerText = titles[name];
+
+  if (name === "assigned") renderAssigned();
+  if (name === "resolved") renderResolved();
+}
+
+/* ============================
+   STATS
+============================= */
+function updateStats(tickets) {
+  const list = tickets || solverTicketsList || [];
+  const loggedInEmail = localStorage.getItem("userEmail") || "solver@gmail.com";
+  
+  let totalAssigned = 0;
+  let resolved = 0;
+  let pending = 0;
+  
+  list.forEach(t => {
+    if (t.assignedSolverEmail === loggedInEmail) {
+      totalAssigned++;
+      if (t.status === "Solved" || t.status === "Resolved") {
+        resolved++;
+      } else {
+        pending++;
+      }
+    }
+  });
+  
+  document.getElementById("assignedCount").innerText = totalAssigned;
+  document.getElementById("resolvedCount").innerText = resolved;
+  document.getElementById("pendingCount").innerText  = pending;
+}
+
+/* ============================
+   RENDER ASSIGNED
+============================= */
+function renderAssigned(filterText="", filterStatus="") {
+  const tbody   = document.getElementById("solverTicketBody");
+  const empty   = document.getElementById("assignedEmpty");
+
+  fetch('/api/tickets')
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      solverTicketsList = data.tickets;
+      updateStats(solverTicketsList);
+
+      const active = solverTicketsList.filter(t =>
+        t.status !== "Solved" && t.status !== "Resolved" && t.status !== "Rejected"
+      ).filter(t => {
+        const txt = filterText.toLowerCase();
+        const matchTxt = !txt ||
+          t.id.toLowerCase().includes(txt) ||
+          t.category.toLowerCase().includes(txt) ||
+          t.name.toLowerCase().includes(txt);
+        const matchStatus = !filterStatus || t.status === filterStatus;
+        return matchTxt && matchStatus;
+      });
+
+      tbody.innerHTML = "";
+      if (!active.length) { empty.style.display="block"; return; }
+      empty.style.display = "none";
+
+      const loggedInEmail = localStorage.getItem("userEmail") || "solver@gmail.com";
+
+      active.forEach(t => {
+        const statusClass = t.status.toLowerCase().replace(" ","-");
+        const date = t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN",{
+          day:"2-digit",month:"short"
+        }) : "—";
+
+        let actionHtml = "";
+        const integerId = parseInt(t.id.replace("TKT-", ""));
+        
+        let viewBtn = `<button class="btn btn-sm btn-primary" onclick="viewTicketDetails('${t.id}')" style="background:rgba(37,99,235,0.08);color:var(--blue);border:1px solid rgba(37,99,235,0.2);">
+                         <i class="fa-solid fa-eye"></i> View
+                       </button>`;
+
+        if (!t.assignedSolverId) {
+          // Unassigned: show Assign to Me button
+          actionHtml = `${viewBtn}
+                        <button class="btn btn-sm btn-primary" onclick="assignTicket(${integerId})" style="background:var(--blue);border:none;">
+                          <i class="fa-solid fa-user-plus"></i> Assign to Me
+                        </button>`;
+        } else if (t.assignedSolverEmail === loggedInEmail) {
+          // Assigned to current solver: show Update button
+          actionHtml = `${viewBtn}
+                        <button class="btn btn-sm btn-success" onclick="openResolveModal('${t.id}')">
+                          <i class="fa-solid fa-check"></i> Update
+                        </button>`;
+        } else {
+          // Assigned to another solver: lock editing
+          actionHtml = `${viewBtn}
+                        <span style="font-size:12px;color:#64748b;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-lock"></i> Assigned to ${t.assignedSolverName}</span>`;
+        }
+
+        let assignmentBadge = "";
+        if (!t.assignedSolverId) {
+          assignmentBadge = `<br><span style="font-size:11px;color:#64748b;font-weight:500;display:inline-flex;align-items:center;gap:4px;margin-top:4px;"><i class="fa-solid fa-circle-question"></i> Unassigned</span>`;
+        } else if (t.assignedSolverEmail === loggedInEmail) {
+          assignmentBadge = `<br><span style="font-size:11px;color:var(--green);font-weight:600;display:inline-flex;align-items:center;gap:4px;margin-top:4px;"><i class="fa-solid fa-user-check"></i> Assigned to You</span>`;
+        } else {
+          assignmentBadge = `<br><span style="font-size:11px;color:var(--purple);font-weight:600;display:inline-flex;align-items:center;gap:4px;margin-top:4px;"><i class="fa-solid fa-user-lock"></i> Assigned to ${t.assignedSolverName}</span>`;
+        }
+
+        tbody.innerHTML += `
+          <tr>
+            <td><span style="font-family:'Syne',sans-serif;color:var(--green);font-size:13px;">${t.id}</span><br>
+              <span style="color:var(--text-secondary);font-size:11px;">${date}</span></td>
+            <td>
+              <div style="font-size:14px;">${t.name}</div>
+              <div style="font-size:12px;color:var(--text-secondary);">${t.email||""}</div>
+            </td>
+            <td>${t.category}</td>
+            <td><span class="badge ${(t.priority||"low").toLowerCase()}">${t.priority||"Low"}</span></td>
+            <td style="max-width:160px;font-size:13px;color:var(--text-secondary);">${(t.aiSuggestion||"").substring(0,45)}...</td>
+            <td>
+              <span class="badge ${statusClass}">${t.status}</span>
+              ${assignmentBadge}
+            </td>
+            <td>
+              <div style="display:flex;gap:8px;">
+                ${actionHtml}
+              </div>
+            </td>
+          </tr>`;
+      });
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    tbody.innerHTML = "";
+    empty.style.display = "block";
+  });
+}
+
+function filterTickets() {
+  const text   = document.getElementById("solverSearch").value;
+  const status = document.getElementById("solverFilter").value;
+  renderAssigned(text, status);
+}
+
+function assignTicket(integerId) {
+  fetch(`/api/tickets/${integerId}/assign`, {
+    method: 'PUT'
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      renderAssigned();
+      showToast("success", "Ticket Assigned", `Ticket TKT-${integerId} assigned to you.`);
+    } else {
+      showToast("error", "Assignment Failed", data.message || "An error occurred.");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast("error", "Connection Error", "Failed to assign ticket.");
+  });
+}
+
+/* ============================
+   RENDER RESOLVED
+============================= */
+function renderResolved() {
+  const tbody   = document.getElementById("resolvedBody");
+  const empty   = document.getElementById("resolvedEmpty");
+  const loggedInEmail = localStorage.getItem("userEmail") || "solver@gmail.com";
+
+  fetch('/api/tickets')
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      solverTicketsList = data.tickets;
+      
+      const done = solverTicketsList.filter(t => 
+        (t.status === "Solved" || t.status === "Resolved") && t.assignedSolverEmail === loggedInEmail
+      );
+      tbody.innerHTML = "";
+
+      if (!done.length) { empty.style.display="block"; return; }
+      empty.style.display = "none";
+
+      done.forEach(t => {
+        tbody.innerHTML += `
+          <tr>
+            <td><span style="font-family:'Syne',sans-serif;color:var(--blue);font-size:13px;">${t.id}</span></td>
+            <td>${t.name}</td>
+            <td>${t.category}</td>
+            <td><span class="badge ${(t.priority||"low").toLowerCase()}">${t.priority||"Low"}</span></td>
+            <td style="color:var(--text-secondary);font-size:13px;">${t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN") : "—"}</td>
+          </tr>`;
+      });
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    tbody.innerHTML = "";
+    empty.style.display = "block";
+  });
+}
+
+/* ============================
+   RESOLVE MODAL
+============================= */
+function openResolveModal(id) {
+  currentTicketId = id;
+  const t = solverTicketsList.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById("resolveModalSub").innerText = `${t.id} — ${t.category} (Priority: ${t.priority || "Low"})`;
+  document.getElementById("resolveStatus").value = t.status;
+  document.getElementById("resolveNote").value = "";
+  
+  // Reset modal display sections
+  document.getElementById("standardUpdateSection").style.display = "block";
+  document.getElementById("releaseReasonSection").style.display = "none";
+  document.getElementById("releaseReasonText").value = "";
+  document.getElementById("approvalRequestSection").style.display = "none";
+  document.getElementById("approvalRequestText").value = "";
+
+  // Check approval status
+  const reqBtn = document.getElementById("reqApprovalBtn");
+  if (t.approvalStatus === 'Pending') {
+    reqBtn.disabled = true;
+    reqBtn.style.opacity = "0.5";
+    reqBtn.style.cursor = "not-allowed";
+    reqBtn.innerHTML = `<i class="fa-solid fa-clock"></i> Approval Pending`;
+  } else if (t.approvalStatus === 'Approved') {
+    reqBtn.disabled = true;
+    reqBtn.style.opacity = "0.5";
+    reqBtn.style.cursor = "not-allowed";
+    reqBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Approved`;
+  } else {
+    reqBtn.disabled = false;
+    reqBtn.style.opacity = "1";
+    reqBtn.style.cursor = "pointer";
+    reqBtn.innerHTML = `<i class="fa-solid fa-shield"></i> Request Approval`;
+  }
+
+  document.getElementById("resolveModal").classList.add("show");
+}
+
+function closeResolveModal() {
+  document.getElementById("resolveModal").classList.remove("show");
+  document.getElementById("approvalRequestText").value = "";
+  currentTicketId = null;
+}
+
+function showReleaseSection() {
+  document.getElementById("standardUpdateSection").style.display = "none";
+  document.getElementById("releaseReasonSection").style.display = "block";
+}
+
+function hideReleaseSection() {
+  document.getElementById("standardUpdateSection").style.display = "block";
+  document.getElementById("releaseReasonSection").style.display = "none";
+}
+
+function submitRelease() {
+  const reason = document.getElementById("releaseReasonText").value.trim();
+  if (!reason) {
+    alert("Please provide a reason for releasing this ticket.");
+    return;
+  }
+  const integerId = parseInt(currentTicketId.replace("TKT-", ""));
+
+  fetch(`/api/tickets/${integerId}/release`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason: reason })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      closeResolveModal();
+      renderAssigned();
+      showToast("info", "Ticket Released", "Ticket returned to the unassigned pool.");
+    } else {
+      showToast("error", "Release Failed", data.message || "An error occurred.");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast("error", "Connection Error", "Failed to release ticket.");
+  });
+}
+
+function requestApproval() {
+  document.getElementById("standardUpdateSection").style.display = "none";
+  document.getElementById("approvalRequestSection").style.display = "block";
+}
+
+function hideApprovalSection() {
+  document.getElementById("standardUpdateSection").style.display = "block";
+  document.getElementById("approvalRequestSection").style.display = "none";
+}
+
+function submitApprovalRequest() {
+  const msg = document.getElementById("approvalRequestText").value.trim();
+  if (!msg) {
+    alert("Please provide a message explaining why you need approval.");
+    return;
+  }
+  const integerId = parseInt(currentTicketId.replace("TKT-", ""));
+
+  fetch(`/api/tickets/${integerId}/request_approval`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: msg })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      closeResolveModal();
+      renderAssigned();
+      showToast("success", "Approval Requested", "Escalation request forwarded to admin.");
+    } else {
+      showToast("error", "Escalation Failed", data.message || "An error occurred.");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast("error", "Connection Error", "Failed to submit request.");
+  });
+}
+
+function viewTicketDetails(id) {
+  const t = solverTicketsList.find(x => x.id === id);
+  if (!t) return;
+
+  const loggedInEmail = localStorage.getItem("userEmail") || "solver@gmail.com";
+
+  // Check if assigned to another solver
+  if (t.assignedSolverId && t.assignedSolverEmail !== loggedInEmail) {
+    showToast("error", "Access Denied", `This ticket is assigned to ${t.assignedSolverName} and cannot be opened by other solvers.`);
+    return;
+  }
+
+  document.getElementById("modalTitle").innerText = `Ticket ${t.id}`;
+  document.getElementById("modalSub").innerText   =
+    `Submitted on ${t.createdAt ? new Date(t.createdAt).toLocaleString() : "—"}`;
+
+  const statusClass = (t.status||"pending").toLowerCase().replace(/\s+/g,"-");
+  
+  const adminNote   = t.adminNote
+    ? `<div style="margin-top:12px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Admin Note</div>
+        <div style="font-size:14px;color:var(--text-primary);">${t.adminNote}</div>
+       </div>` : "";
+
+  const solverNote   = t.solverNote
+    ? `<div style="margin-top:12px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Solver Note</div>
+        <div style="font-size:14px;color:var(--text-primary);">${t.solverNote}</div>
+       </div>` : "";
+
+  const releaseReasonHtml = t.releaseReason
+    ? `<div style="margin-top:12px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:var(--red);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Release Reason</div>
+        <div style="font-size:14px;color:var(--text-primary);font-weight:500;">${t.releaseReason}</div>
+       </div>` : "";
+
+  const approvalHtml = t.approvalStatus === 'Pending'
+    ? `<div style="margin-top:12px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.15);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:var(--yellow);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Escalation Status</div>
+        <div style="font-size:14px;color:var(--text-primary);font-weight:500;margin-bottom:6px;"><i class="fa-solid fa-clock"></i> Higher official approval request is pending admin action.</div>
+        ${t.approvalRequestMessage ? `<div style="font-size:13px;color:var(--text-secondary);border-top:1px solid rgba(245,158,11,0.15);padding-top:8px;margin-top:8px;line-height:1.4;"><strong>Your Message:</strong> "${t.approvalRequestMessage}"</div>` : ""}
+       </div>`
+    : t.approvalStatus === 'Approved'
+    ? `<div style="margin-top:12px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Escalation Status</div>
+        <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><i class="fa-solid fa-circle-check"></i> Higher official approval has been accepted. You are authorized to solve this ticket.</div>
+       </div>`
+    : "";
+
+  const priClass = (t.priority||"low").toLowerCase();
+  const subjectHtml = t.subject ? `<div class="ai-insight-item"><div class="label">Subject</div><div style="font-size:14px;font-weight:600;margin-top:4px;color:var(--text-primary);">${t.subject}</div></div>` : "";
+  const contactChannelHtml = t.contactChannel ? `<div class="ai-insight-item"><div class="label">Contact Channel</div><div style="font-size:14px;font-weight:600;margin-top:4px;color:var(--text-primary);">${t.contactChannel}</div></div>` : "";
+  const productPurchasedHtml = t.productPurchased ? `<div class="ai-insight-item"><div class="label">Product Purchased</div><div style="font-size:14px;font-weight:600;margin-top:4px;color:var(--text-primary);">${t.productPurchased}</div></div>` : "";
+
+  document.getElementById("modalBody").innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div class="ai-insight-item"><div class="label">Category</div><div style="font-size:15px;font-weight:600;margin-top:4px;">${t.category}</div></div>
+      <div class="ai-insight-item"><div class="label">Status</div><div style="margin-top:4px;"><span class="badge ${statusClass}">${t.status}</span></div></div>
+      <div class="ai-insight-item"><div class="label">Priority</div><div style="margin-top:4px;"><span class="badge ${priClass}">${t.priority||"Low"}</span></div></div>
+      <div class="ai-insight-item"><div class="label">Submitted By</div><div style="font-size:14px;margin-top:4px;color:var(--text-primary);">${t.name} (${t.email})</div></div>
+      ${subjectHtml}
+      ${contactChannelHtml}
+      ${productPurchasedHtml}
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Description</div>
+      <div style="font-size:14px;line-height:1.8;color:var(--text-primary);">${t.description}</div>
+    </div>
+    <div class="ai-live-box show" style="background:rgba(37,99,235,0.03);border:1px solid rgba(37,99,235,0.15);border-radius:12px;padding:18px 20px;margin-top:16px;">
+      <div class="ai-label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:8px;"><i class="fa-solid fa-robot"></i> &nbsp;AI Analysis</div>
+      <div class="ai-text" style="color:var(--text-secondary);font-size:14px;line-height:1.7;">${t.aiSuggestion || "No AI suggestion available."}</div>
+    </div>
+    ${adminNote}${solverNote}${releaseReasonHtml}${approvalHtml}`;
+
+  document.getElementById("ticketModal").classList.add("show");
+}
+
+function closeModal() {
+  document.getElementById("ticketModal").classList.remove("show");
+}
+
+function saveResolve() {
+  const status = document.getElementById("resolveStatus").value;
+  const note   = document.getElementById("resolveNote").value;
+  const t = solverTicketsList.find(x => x.id === currentTicketId);
+
+  if ((status === "Solved" || status === "Resolved") && t && t.approvalStatus === "Pending") {
+    showToast("error", "Action Blocked", "Higher official approval is pending. You cannot solve this ticket yet.");
+    return;
+  }
+
+  const integerId = parseInt(currentTicketId.replace("TKT-", ""));
+
+  fetch(`/api/tickets/${integerId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: status, note: note })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      closeResolveModal();
+      renderAssigned();
+      showToast("success","Ticket Updated",`${currentTicketId} → ${status}`);
+    } else {
+      showToast("error","Failed to update status", data.message || "An error occurred.");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast("error","Connection Error","Failed to update ticket.");
+  });
+}
+
+/* ============================
+   TOAST
+============================= */
+function showToast(type, title, msg) {
+  const container = document.getElementById("toastContainer");
+  const icons = { success:"fa-circle-check", error:"fa-circle-xmark", info:"fa-circle-info" };
+  const id = "toast-" + Date.now();
+  container.innerHTML += `
+    <div class="toast ${type}" id="${id}">
+      <div class="toast-icon"><i class="fa-solid ${icons[type]}"></i></div>
+      <div class="toast-text">
+        <div class="toast-title">${title}</div>
+        <div class="toast-msg">${msg}</div>
+      </div>
+    </div>`;
+  setTimeout(() => { const el = document.getElementById(id); if (el) el.remove(); }, 4000);
+}
+
+/* ============================
+   SOLVER PROFILE DROPDOWN
+============================= */
+function toggleSolverProfile(e) {
+  e.stopPropagation();
+  const panel = document.getElementById("solverProfilePanel");
+  panel.style.display = panel.style.display === "none" ? "block" : "none";
+}
+
+function closeSolverDropdown() {
+  document.getElementById("solverProfilePanel").style.display = "none";
+}
+
+document.addEventListener("click", (e) => {
+  const panel = document.getElementById("solverProfilePanel");
+  const avatar = document.getElementById("solverAvatar");
+  if (panel && avatar) {
+    if (!avatar.contains(e.target) && !panel.contains(e.target)) {
+      panel.style.display = "none";
+    }
+  }
+});
+
+document.getElementById("changePasswordModal").addEventListener("click", function(e){
+  if (e.target===this) closeChangePasswordModal();
+});
+
+/* ============================
+   LOGOUT
+============================= */
+function logout() {
+  fetch('/api/logout', { method: 'POST' })
+  .finally(() => {
+    localStorage.removeItem("role");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userName");
+    window.location.href = "index.html";
+  });
+}
+
+/* ============================
+   CHANGE PASSWORD
+============================= */
+function openChangePasswordModal() {
+  document.getElementById("changeCurrentPassword").value = "";
+  document.getElementById("changeNewPassword").value = "";
+  document.getElementById("changeConfirmPassword").value = "";
+  document.getElementById("changePasswordErrorText").innerText = "";
+  document.getElementById("changePasswordModal").classList.add("show");
+}
+
+function closeChangePasswordModal() {
+  document.getElementById("changePasswordModal").classList.remove("show");
+}
+
+function submitChangePassword() {
+  const current_password = document.getElementById("changeCurrentPassword").value;
+  const new_password = document.getElementById("changeNewPassword").value;
+  const confirm_password = document.getElementById("changeConfirmPassword").value;
+  const errorText = document.getElementById("changePasswordErrorText");
+  
+  errorText.innerText = "";
+  if (!current_password || !new_password || !confirm_password) {
+    errorText.innerText = "Please fill in all fields.";
+    return;
+  }
+  if (new_password.length < 6) {
+    errorText.innerText = "New password must be at least 6 characters.";
+    return;
+  }
+  if (new_password !== confirm_password) {
+    errorText.innerText = "New passwords do not match.";
+    return;
+  }
+  
+  fetch('/api/me/change_password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ current_password, new_password })
+  })
+  .then(response => response.json().then(data => ({ status: response.status, data })))
+  .then(({ status, data }) => {
+    if (status === 200 && data.success) {
+      closeChangePasswordModal();
+      showToast("success", "Password Updated", "Your password has been changed successfully.");
+    } else {
+      errorText.innerText = data.message || "Failed to update password.";
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    errorText.innerText = "Connection error. Please try again.";
+  });
+}
+
+/* ============================
+   INIT
+============================= */
+(function init() {
+  initSidebarState();
+  renderAssigned();
+  
+  const email = localStorage.getItem("userEmail") || "solver@gmail.com";
+  const name = localStorage.getItem("userName") || "Support Engineer";
+  const letter = email.charAt(0).toUpperCase();
+
+  const solverAvatar = document.getElementById("solverAvatar");
+  if (solverAvatar) solverAvatar.innerText = letter;
+
+  const profileIconLarge = document.getElementById("solverProfileIconLarge");
+  if (profileIconLarge) profileIconLarge.innerText = letter;
+
+  const profileName = document.getElementById("solverProfileName");
+  if (profileName) profileName.innerText = name.charAt(0).toUpperCase() + name.slice(1);
+
+  const profileEmail = document.getElementById("solverProfileEmail");
+  if (profileEmail) profileEmail.innerText = email;
+  
+  // Background auto-polling helper to fetch and update solver dashboard every 6 seconds
+  setInterval(() => {
+    const activeLi = document.querySelector(".sidebar li.active");
+    if (!activeLi) return;
+    const clickAttr = activeLi.getAttribute("onclick") || "";
+    const match = clickAttr.match(/'([^']+)'/);
+    if (!match) return;
+    const activeSection = match[1];
+    if (activeSection === "assigned") {
+      const searchInput = document.getElementById("solverSearch");
+      const statusFilter = document.getElementById("solverFilter");
+      const txt = searchInput ? searchInput.value : "";
+      const stat = statusFilter ? statusFilter.value : "";
+      renderAssigned(txt, stat);
+    } else if (activeSection === "resolved") {
+      renderResolved();
+    }
+  }, 6000);
+})();
+
+/* ============================
+   SIDEBAR TOGGLE & MINIMIZATION
+============================= */
+function toggleSidebar(minimize) {
+  const sidebar = document.querySelector(".sidebar");
+  const mainContent = document.querySelector(".main-content");
+  const expandBtn = document.getElementById("sidebarExpandBtn");
+  
+  if (minimize) {
+    if (sidebar) sidebar.classList.add("minimized");
+    if (mainContent) mainContent.classList.add("expanded");
+    if (expandBtn) expandBtn.style.display = "flex";
+    localStorage.setItem("sidebarMinimized", "true");
+  } else {
+    if (sidebar) sidebar.classList.remove("minimized");
+    if (mainContent) mainContent.classList.remove("expanded");
+    if (expandBtn) expandBtn.style.display = "none";
+    localStorage.setItem("sidebarMinimized", "false");
+  }
+}
+
+function initSidebarState() {
+  const isMinimized = localStorage.getItem("sidebarMinimized") === "true";
+  toggleSidebar(isMinimized);
+}
+</script>
+
+</body>
+</html>
